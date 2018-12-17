@@ -3,7 +3,13 @@
 #  idProduct          0x0315 
 import binascii
 import time
+import vlc
 
+forestFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/squirrel.mp4"
+cityFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/cat.mp4"
+
+cat = vlc.MediaPlayer(cityFile)
+squirrel = vlc.MediaPlayer(forestFile)
 
 
 def ByteToHex( byteStr ):
@@ -30,12 +36,21 @@ device = "/dev/hidraw4"
 f = open(device, 'r')
 
 
-
 while 1:
     s = f.read(5)
-    print("----")
+    #print("----")
     byte1 = ByteToHex(s[4]+s[3])
     pulse = int(str(byte1), base=16)
-    print(pulse)
-    print("BPM:", (1000*60)/pulse)
+    bpm = (1000*60/pulse)
+    #print(pulse)
+
+    if (bpm < 120) and (bpm > 70):
+        print("BPM:", bpm)
+        time.sleep(2)
+        cat.play()
+    if (bpm <= 70) and (bpm > 40):
+        print("BPM:", bpm)
+        time.sleep(2)
+        squirrel.play()
+
 print("done")
