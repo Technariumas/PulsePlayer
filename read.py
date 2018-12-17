@@ -4,13 +4,13 @@
 import binascii
 import time
 import vlc
+from multiprocessing import Process
 
 forestFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/squirrel.mp4"
 cityFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/cat.mp4"
 
 cat = vlc.MediaPlayer(cityFile)
 squirrel = vlc.MediaPlayer(forestFile)
-
 
 def ByteToHex( byteStr ):
     """
@@ -35,22 +35,40 @@ def hex2dec (hex):
 device = "/dev/hidraw4"
 f = open(device, 'r')
 
-
-while 1:
+def checkPulse():
     s = f.read(5)
-    #print("----")
     byte1 = ByteToHex(s[4]+s[3])
     pulse = int(str(byte1), base=16)
     bpm = (1000*60/pulse)
-    #print(pulse)
+    print("BPM:", bpm)
+    return bpm
 
-    if (bpm < 120) and (bpm > 70):
-        print("BPM:", bpm)
-        time.sleep(2)
+
+while 1:
+    bpm = checkPulse()
+    print("INIT BPM:", bpm)
+    if (bpm < 120) and (bpm > 80):
+        print("CAT")
         cat.play()
-    if (bpm <= 70) and (bpm > 40):
-        print("BPM:", bpm)
-        time.sleep(2)
+        time.sleep(1)
+        print("CHECKING")
+        bpm = checkPulse()
+        if (bpm <= 80):
+		  cat.stop()
+		  #break
+    else if (bpm <= 80) and (bpm > 30):
+        print("SQUIRREL")
         squirrel.play()
-
+        time.sleep(1)
+        print("CHECKING")        
+        bpm = checkPulse()
+        if (bpm > 80):
+		  squirrel.stop()
+		  #break
+#		  break
+	else:
+		print("WAITING")
+		bpm = checkPulse()
+		time.sleep(0.1)	
+		print("BPM:", bpm)
 print("done")
