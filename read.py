@@ -5,12 +5,30 @@ import binascii
 import time
 import vlc
 from multiprocessing import Process
+import numpy as np
+import collections
 
 forestFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/squirrel.mp4"
 cityFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/cat.mp4"
 
 cat = vlc.MediaPlayer(cityFile)
 squirrel = vlc.MediaPlayer(forestFile)
+
+def running_mean(x, N):
+    cumsum = numpy.cumsum(numpy.insert(x, 0, 0)) 
+    return (cumsum[N:] - cumsum[:-N]) / float(N)
+
+def moving_average(iterable, n=10):
+    # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
+    # http://en.wikipedia.org/wiki/Moving_average
+    it = iter(iterable)
+    d = deque(itertools.islice(it, n-1))
+    d.appendleft(0)
+    s = sum(d)
+    for elem in it:
+        s += elem - d.popleft()
+        d.append(elem)
+        yield s / n
 
 def ByteToHex( byteStr ):
     """
@@ -40,32 +58,40 @@ def checkPulse():
     byte1 = ByteToHex(s[4]+s[3])
     pulse = int(str(byte1), base=16)
     bpm = (1000*60/pulse)
-    print("BPM:", bpm)
     return bpm
 
+avgArray = checkPulse()*np.ones((10, 1))
+previousMean = np.mean(avgArray)
+counter = 0
 
 while 1:
     bpm = checkPulse()
-    print("INIT BPM:", bpm)
-    if (bpm < 120) and (bpm > 80):
-        print("CAT")
-        cat.play()
-        time.sleep(1)
-        print("CHECKING")
-        bpm = checkPulse()
-        if (bpm <= 80):
-		  cat.stop()
-		  #break
-    else if (bpm <= 80) and (bpm > 30):
-        print("SQUIRREL")
-        squirrel.play()
-        time.sleep(1)
-        print("CHECKING")        
-        bpm = checkPulse()
-        if (bpm > 80):
-		  squirrel.stop()
-		  #break
-#		  break
+    if (bpm < 120) and (bpm > 30):
+      counter+=1
+      if counter > 10:	
+        avgArray = np.roll(avgArray, -1)
+        avgArray[0] = bpm
+        mean = np.mean(avgArray)
+        print(mean, "AVG BPM", avgArray)
+        print(previousMean, "PREVIOUS")
+        previousMean = mean
+        if (bpm < 120) and (bpm > 80):
+          print("CAT")
+          cat.play()
+          time.sleep(1)
+          bpm = checkPulse()
+          if (bpm <= 80):
+		    cat.stop()
+		    #break
+        elif (bpm <= 80) and (bpm > 30):
+          print("SQUIRREL")
+          squirrel.play()
+          time.sleep(1)
+          bpm = checkPulse()
+          if (bpm > 80):
+		    squirrel.stop()
+		    #break
+  # 		  break
 	else:
 		print("WAITING")
 		bpm = checkPulse()
