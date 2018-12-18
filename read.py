@@ -1,34 +1,17 @@
+from __future__ import division
 #!/usr/bin/python3
 # idVendor           0x0b9c 
 #  idProduct          0x0315 
 import binascii
 import time
 import vlc
-from multiprocessing import Process
 import numpy as np
-import collections
 
-forestFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/squirrel.mp4"
-cityFile = "/home/opit/Desktop/hackerspace/projects/Pulse/sounds/cat.mp4"
+forestFile = "/home/pi/PulsePlayer/sounds/jura.wav"
+cityFile = "/home/pi/PulsePlayer/sounds/miestas.wav"
 
 cat = vlc.MediaPlayer(cityFile)
 squirrel = vlc.MediaPlayer(forestFile)
-
-def running_mean(x, N):
-    cumsum = numpy.cumsum(numpy.insert(x, 0, 0)) 
-    return (cumsum[N:] - cumsum[:-N]) / float(N)
-
-def moving_average(iterable, n=10):
-    # moving_average([40, 30, 50, 46, 39, 44]) --> 40.0 42.0 45.0 43.0
-    # http://en.wikipedia.org/wiki/Moving_average
-    it = iter(iterable)
-    d = deque(itertools.islice(it, n-1))
-    d.appendleft(0)
-    s = sum(d)
-    for elem in it:
-        s += elem - d.popleft()
-        d.append(elem)
-        yield s / n
 
 def ByteToHex( byteStr ):
     """
@@ -50,7 +33,7 @@ def hex2dec (hex):
     result_dec = int(hex, 0)
     return result_dec
 
-device = "/dev/hidraw4"
+device = "/dev/hidraw5"
 f = open(device, 'r')
 
 def checkPulse():
@@ -68,13 +51,14 @@ while 1:
     bpm = checkPulse()
     if (bpm < 120) and (bpm > 30):
       counter+=1
+      print(counter)
       if counter > 10:	
         avgArray = np.roll(avgArray, -1)
         avgArray[0] = bpm
         mean = np.mean(avgArray)
         print(mean, "mean")
         print(previousMean, "PREVIOUS")
-        if mean >= previousMean:
+        if (mean - previousMean) >= 1:
           squirrel.stop()
           print("CAT")
           cat.play()
@@ -84,7 +68,7 @@ while 1:
           #if (bpm <= 80):
 		   # cat.stop()
 		    #break
-        elif (mean < previousMean):
+        elif (mean - previousMean) < -1:
           cat.stop()
           print("SQUIRREL")
           squirrel.play()
