@@ -74,24 +74,26 @@ while 1:
         mean = np.mean(avgArray)
         print(mean, "AVG BPM", avgArray)
         print(previousMean, "PREVIOUS")
-        previousMean = mean
-        if (bpm < 120) and (bpm > 80):
+        if mean >= previousMean:
+          squirrel.stop()
           print("CAT")
           cat.play()
           time.sleep(1)
-          bpm = checkPulse()
-          if (bpm <= 80):
-		    cat.stop()
+          #bpm = checkPulse()
+          #if (bpm <= 80):
+		   # cat.stop()
 		    #break
-        elif (bpm <= 80) and (bpm > 30):
+        elif mean < previousMean:
+          cat.stop()
           print("SQUIRREL")
           squirrel.play()
           time.sleep(1)
-          bpm = checkPulse()
-          if (bpm > 80):
-		    squirrel.stop()
+          #bpm = checkPulse()
+          #if (bpm > 80):
+		  #  squirrel.stop()
 		    #break
   # 		  break
+        previousMean = mean
 	else:
 		print("WAITING")
 		bpm = checkPulse()
